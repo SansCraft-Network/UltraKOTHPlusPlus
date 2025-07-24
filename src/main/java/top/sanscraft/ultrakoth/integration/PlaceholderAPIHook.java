@@ -15,8 +15,8 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
         this.playerDataManager = playerDataManager;
     }
 
-    public void register() {
-        super.register();
+    public boolean register() {
+        return super.register();
     }
 
     @Override
