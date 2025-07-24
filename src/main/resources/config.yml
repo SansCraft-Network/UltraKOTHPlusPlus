@@ -83,7 +83,7 @@ koth-locations:
 # Plugin settings
 settings:
   # Debug mode - enables additional logging
-  debug: false
+  debug: true
   
   # Data save interval (minutes)
   save-interval: 5

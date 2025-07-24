@@ -187,6 +187,27 @@ public class KothManager implements Listener {
         if (region == null) return;
 
         boolean inRegion = isPlayerInRegion(player, region);
+        
+        // Debug logging
+        if (plugin.getConfig().getBoolean("settings.debug", false)) {
+            plugin.getLogger().info("DEBUG: Player " + player.getName() + " movement check:");
+            plugin.getLogger().info("  - Active KOTH: " + activeKoth);
+            plugin.getLogger().info("  - Player location: " + player.getLocation());
+            plugin.getLogger().info("  - Region using WorldGuard: " + region.isUsingWorldGuard());
+            if (region.isUsingWorldGuard()) {
+                plugin.getLogger().info("  - WorldGuard region name: " + region.getRegionName());
+                plugin.getLogger().info("  - WorldGuard enabled: " + plugin.getWorldGuardHook().isEnabled());
+                if (plugin.getWorldGuardHook().isEnabled()) {
+                    String[] regions = plugin.getWorldGuardHook().getRegionsAtLocation(player);
+                    plugin.getLogger().info("  - Player is in regions: " + String.join(", ", regions));
+                }
+            } else {
+                plugin.getLogger().info("  - Region center: " + region.getLocation());
+                plugin.getLogger().info("  - Region radius: " + region.radius);
+                plugin.getLogger().info("  - Distance to center: " + player.getLocation().distance(region.getLocation()));
+            }
+            plugin.getLogger().info("  - Player in region: " + inRegion);
+        }
 
         if (inRegion) {
             if (capturingPlayer == null || !capturingPlayer.equals(player.getUniqueId())) {
