@@ -31,6 +31,18 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
         saveDefaultConfig();
         getLogger().info("Configuration loaded successfully");
         
+        // Initialize WorldGuardHook first (required by KothManager)
+        getLogger().info("Initializing WorldGuardHook...");
+        try {
+            worldGuardHook = new WorldGuardHook();
+            getLogger().info("WorldGuardHook initialized successfully (WorldGuard " + 
+                (worldGuardHook.isEnabled() ? "detected" : "not detected") + ")");
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize WorldGuardHook: " + e.getMessage());
+            getLogger().warning("WorldGuard integration will be disabled");
+            worldGuardHook = null;
+        }
+        
         // Initialize PlayerDataManager with error handling
         getLogger().info("Initializing PlayerDataManager...");
         try {
@@ -41,7 +53,7 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
             throw new RuntimeException("PlayerDataManager initialization failed", e);
         }
         
-        // Initialize KothManager with error handling
+        // Initialize KothManager with error handling (after WorldGuardHook)
         getLogger().info("Initializing KothManager...");
         try {
             kothManager = new KothManager(this);
@@ -49,18 +61,6 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
         } catch (Exception e) {
             getLogger().severe("Failed to initialize KothManager: " + e.getMessage());
             throw new RuntimeException("KothManager initialization failed", e);
-        }
-        
-        // Initialize WorldGuardHook with error handling
-        getLogger().info("Initializing WorldGuardHook...");
-        try {
-            worldGuardHook = new WorldGuardHook();
-            getLogger().info("WorldGuardHook initialized successfully (WorldGuard " + 
-                (worldGuardHook.isEnabled() ? "detected" : "not detected") + ")");
-        } catch (Exception e) {
-            getLogger().warning("Failed to initialize WorldGuardHook: " + e.getMessage());
-            getLogger().warning("WorldGuard integration will be disabled");
-            worldGuardHook = null;
         }
         
         // Register command with error handling
