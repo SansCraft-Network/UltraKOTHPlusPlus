@@ -1,5 +1,6 @@
 package top.sanscraft.ultrakoth.command;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -230,10 +231,9 @@ public class KothCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             // First argument - subcommands
-            List<String> subcommands = Arrays.asList("help", "status", "wins", "list");
+            List<String> subcommands = new ArrayList<>(Arrays.asList("help", "status", "wins", "list"));
             
             if (sender.hasPermission("ultrakoth.admin")) {
-                subcommands = new ArrayList<>(subcommands);
                 subcommands.addAll(Arrays.asList("start", "stop", "reload"));
             }
 
@@ -245,14 +245,17 @@ public class KothCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("start") && sender.hasPermission("ultrakoth.admin")) {
                 // Region names for start command
-                for (String regionName : plugin.getKothManager().getKothRegions().keySet()) {
-                    if (regionName.toLowerCase().startsWith(args[1].toLowerCase())) {
-                        completions.add(regionName);
+                KothManager kothManager = plugin.getKothManager();
+                if (kothManager != null && kothManager.getKothRegions() != null) {
+                    for (String regionName : kothManager.getKothRegions().keySet()) {
+                        if (regionName.toLowerCase().startsWith(args[1].toLowerCase())) {
+                            completions.add(regionName);
+                        }
                     }
                 }
             } else if (args[0].equalsIgnoreCase("wins")) {
                 // Online player names for wins command
-                for (Player player : plugin.getServer().getOnlinePlayers()) {
+                for (Player player : Bukkit.getOnlinePlayers()) {
                     if (player.getName().toLowerCase().startsWith(args[1].toLowerCase())) {
                         completions.add(player.getName());
                     }
