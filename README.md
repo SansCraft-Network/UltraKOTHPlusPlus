@@ -73,24 +73,53 @@ koth-locations:
 
 ### Setting Up KOTH Regions
 
-Add new KOTH locations in the `koth-locations` section:
+The plugin supports two types of region detection:
+
+#### 1. Coordinate/Radius Based (Default)
+Use coordinates and radius for simple circular regions:
 
 ```yaml
 koth-locations:
+  example:
+    use-worldguard: false  # Use coordinate/radius detection
+    world: "world"
+    x: 100
+    y: 65
+    z: 100
+    radius: 10
+```
+
+#### 2. WorldGuard Region Based
+Use existing WorldGuard regions for precise boundaries:
+
+```yaml
+koth-locations:
+  kothplace:
+    use-worldguard: true   # Use WorldGuard region detection
+    world: "world"
+    region: "kothplace"    # WorldGuard region name
+    # x, y, z, radius are ignored when use-worldguard is true
+```
+
+#### Mixed Configuration Example
+You can use both types in the same configuration:
+
+```yaml
+koth-locations:
+  # Coordinate-based region
   desert:
+    use-worldguard: false
     world: "world"
     x: -200
     y: 70
     z: 300
     radius: 15
-    region: "koth_desert"  # Optional WorldGuard region name
   
+  # WorldGuard region
   nether:
+    use-worldguard: true
     world: "world_nether"
-    x: 0
-    y: 64
-    z: 0
-    radius: 12
+    region: "koth_nether"
 ```
 
 ## Commands
@@ -160,11 +189,50 @@ Use these placeholders in other plugins:
 
 ## WorldGuard Integration
 
-If WorldGuard is installed, you can use WorldGuard regions instead of radius-based areas:
+The plugin supports two methods of region detection:
 
-1. Create a WorldGuard region: `/rg define koth_example`
-2. Set the region name in config: `region: "koth_example"`
-3. The plugin will use WorldGuard's precise region boundaries
+### Automatic WorldGuard Region Detection
+
+When `use-worldguard: true` is set, the plugin will:
+1. Use WorldGuard's precise region boundaries
+2. Automatically detect player entry/exit from the region
+3. Support complex region shapes (not just circles)
+4. Respect region priorities and inheritance
+
+Example configuration:
+```yaml
+koth-locations:
+  myregion:
+    use-worldguard: true
+    world: "world"
+    region: "koth_area"  # Your WorldGuard region name
+```
+
+### Manual Coordinate/Radius Detection
+
+When `use-worldguard: false` is set, the plugin will:
+1. Use simple circular detection based on coordinates and radius
+2. Work without WorldGuard dependency
+3. Provide basic but reliable region detection
+
+Example configuration:
+```yaml
+koth-locations:
+  myregion:
+    use-worldguard: false
+    world: "world"
+    x: 100
+    y: 65
+    z: 100
+    radius: 10
+```
+
+### Setup Instructions
+
+1. **For WorldGuard regions**: Create your region with `/rg define <regionname>`, then set `use-worldguard: true` and specify the `region` name
+2. **For coordinate regions**: Set `use-worldguard: false` and specify `x`, `y`, `z`, and `radius`
+
+The plugin will automatically choose the appropriate detection method based on the `use-worldguard` setting.
 
 ## Troubleshooting
 

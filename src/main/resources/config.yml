@@ -49,30 +49,35 @@ koth:
 
 # KOTH locations/regions
 koth-locations:
-  # Example KOTH region
+  # Example KOTH region using coordinates and radius
   example:
+    use-worldguard: false  # Use coordinate/radius based detection
     world: "world"
     x: 100
     y: 65
     z: 100
     radius: 10
-    region: "koth_example"  # WorldGuard region name (optional)
+    # region: ""  # Not used when use-worldguard is false
+  
+  # Example WorldGuard region
+  kothplace:
+    use-worldguard: true   # Use WorldGuard region detection
+    world: "world"
+    region: "kothplace"    # WorldGuard region name
+    # x, y, z, radius are ignored when use-worldguard is true
   
   # Add more KOTH locations here
   # desert:
+  #   use-worldguard: false
   #   world: "world"
   #   x: -200
   #   y: 70
   #   z: 300
   #   radius: 15
-  #   region: "koth_desert"
   
   # nether:
+  #   use-worldguard: true
   #   world: "world_nether"
-  #   x: 0
-  #   y: 64
-  #   z: 0
-  #   radius: 12
   #   region: "koth_nether"
 
 # Plugin settings

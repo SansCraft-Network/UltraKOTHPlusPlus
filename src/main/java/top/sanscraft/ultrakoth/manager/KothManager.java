@@ -48,21 +48,50 @@ public class KothManager implements Listener {
             if (kothSection == null) continue;
 
             String worldName = kothSection.getString("world");
-            int x = kothSection.getInt("x");
-            int y = kothSection.getInt("y");
-            int z = kothSection.getInt("z");
-            int radius = kothSection.getInt("radius", 10);
-            String region = kothSection.getString("region", "");
-
+            boolean useWorldGuard = kothSection.getBoolean("use-worldguard", false);
+            
             World world = Bukkit.getWorld(worldName);
             if (world == null) {
                 plugin.getLogger().warning("World '" + worldName + "' not found for KOTH '" + name + "'");
                 continue;
             }
 
-            KothRegion kothRegion = new KothRegion(name, world, x, y, z, radius, region);
+            KothRegion kothRegion;
+            
+            if (useWorldGuard) {
+                // WorldGuard region mode
+                String region = kothSection.getString("region", "");
+                if (region.isEmpty()) {
+                    plugin.getLogger().warning("WorldGuard region name not specified for KOTH '" + name + "'");
+                    continue;
+                }
+                
+                // Verify WorldGuard region exists
+                if (!plugin.getWorldGuardHook().isEnabled()) {
+                    plugin.getLogger().warning("WorldGuard not available but required for KOTH '" + name + "'");
+                    continue;
+                }
+                
+                kothRegion = new KothRegion(name, world, 0, 0, 0, 0, region, true);
+                plugin.getLogger().info("Loaded WorldGuard KOTH region: " + name + " using region '" + region + "' in world " + worldName);
+                
+            } else {
+                // Coordinate/radius mode
+                int x = kothSection.getInt("x", 0);
+                int y = kothSection.getInt("y", 64);
+                int z = kothSection.getInt("z", 0);
+                int radius = kothSection.getInt("radius", 10);
+                
+                if (radius <= 0) {
+                    plugin.getLogger().warning("Invalid radius for KOTH '" + name + "', using default radius of 10");
+                    radius = 10;
+                }
+                
+                kothRegion = new KothRegion(name, world, x, y, z, radius, "", false);
+                plugin.getLogger().info("Loaded coordinate KOTH region: " + name + " at " + worldName + " (" + x + ", " + y + ", " + z + ") radius: " + radius);
+            }
+
             kothRegions.put(name, kothRegion);
-            plugin.getLogger().info("Loaded KOTH region: " + name + " at " + worldName + " (" + x + ", " + y + ", " + z + ") radius: " + radius);
         }
     }
 
@@ -306,17 +335,21 @@ public class KothManager implements Listener {
     }
 
     private boolean isPlayerInRegion(Player player, KothRegion region) {
-        // First check WorldGuard region if available
-        if (!region.region.isEmpty() && plugin.getWorldGuardHook().isEnabled()) {
-            return plugin.getWorldGuardHook().isInRegion(player, region.region);
+        if (region.isUsingWorldGuard()) {
+            // Use WorldGuard region detection
+            if (!plugin.getWorldGuardHook().isEnabled()) {
+                plugin.getLogger().warning("WorldGuard region '" + region.getRegionName() + "' configured but WorldGuard is not available!");
+                return false;
+            }
+            return plugin.getWorldGuardHook().isInRegion(player, region.getRegionName());
+        } else {
+            // Use coordinate/radius based detection
+            Location loc = player.getLocation();
+            if (!loc.getWorld().equals(region.world)) return false;
+
+            double distance = loc.distance(region.getLocation());
+            return distance <= region.radius;
         }
-
-        // Fallback to radius-based check
-        Location loc = player.getLocation();
-        if (!loc.getWorld().equals(region.world)) return false;
-
-        double distance = loc.distance(region.getLocation());
-        return distance <= region.radius;
     }
 
     private void playEffects(String type, Location location) {
@@ -386,8 +419,9 @@ public class KothManager implements Listener {
         public final World world;
         public final int x, y, z, radius;
         public final String region;
+        public final boolean useWorldGuard;
         
-        public KothRegion(String name, World world, int x, int y, int z, int radius, String region) {
+        public KothRegion(String name, World world, int x, int y, int z, int radius, String region, boolean useWorldGuard) {
             this.name = name;
             this.world = world;
             this.x = x;
@@ -395,10 +429,19 @@ public class KothManager implements Listener {
             this.z = z;
             this.radius = radius;
             this.region = region != null ? region : "";
+            this.useWorldGuard = useWorldGuard;
         }
 
         public Location getLocation() {
             return new Location(world, x, y, z);
+        }
+
+        public boolean isUsingWorldGuard() {
+            return useWorldGuard;
+        }
+
+        public String getRegionName() {
+            return region;
         }
     }
 }

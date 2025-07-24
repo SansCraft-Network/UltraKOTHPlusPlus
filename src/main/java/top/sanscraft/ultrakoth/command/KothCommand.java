@@ -194,12 +194,16 @@ public class KothCommand implements CommandExecutor, TabCompleter {
                     " §c[ACTIVE]" : " §a[INACTIVE]";
             
             sender.sendMessage("§e" + region.name + status);
-            sender.sendMessage("  §7World: §f" + region.world.getName() + 
-                             " §7Location: §f" + region.x + ", " + region.y + ", " + region.z + 
-                             " §7Radius: §f" + region.radius);
             
-            if (!region.region.isEmpty()) {
-                sender.sendMessage("  §7WorldGuard Region: §f" + region.region);
+            if (region.isUsingWorldGuard()) {
+                sender.sendMessage("  §7Type: §bWorldGuard Region");
+                sender.sendMessage("  §7World: §f" + region.world.getName());
+                sender.sendMessage("  §7Region: §f" + region.getRegionName());
+            } else {
+                sender.sendMessage("  §7Type: §bCoordinate/Radius");
+                sender.sendMessage("  §7World: §f" + region.world.getName() + 
+                                 " §7Location: §f" + region.x + ", " + region.y + ", " + region.z + 
+                                 " §7Radius: §f" + region.radius);
             }
         }
     }
