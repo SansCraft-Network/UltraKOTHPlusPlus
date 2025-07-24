@@ -5,9 +5,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import top.sanscraft.ultrakoth.UltraKOTHPlusPlus;
 import top.sanscraft.ultrakoth.manager.PlayerDataManager;
-import top.sanscraft.ultrakoth.manager.KothManager;
-
-import java.util.UUID;
+import top.sanscraft.ultrakoth.model.Koth;
+import top.sanscraft.ultrakoth.model.PlayerData;
 
 public class PlaceholderAPIHook extends PlaceholderExpansion {
     private final UltraKOTHPlusPlus plugin;
@@ -19,155 +18,212 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
     }
 
     @Override
-    public boolean register() {
-        return super.register();
-    }
-
-    @Override
-    public @NotNull String getIdentifier() {
+    @NotNull
+    public String getIdentifier() {
         return "ultrakoth";
     }
 
     @Override
-    public @NotNull String getAuthor() {
-        return "SansNom";
+    @NotNull
+    public String getAuthor() {
+        return plugin.getDescription().getAuthors().toString();
     }
 
     @Override
-    public @NotNull String getVersion() {
-        return "1.0.0";
+    @NotNull
+    public String getVersion() {
+        return plugin.getDescription().getVersion();
     }
 
     @Override
     public boolean persist() {
-        return true;
+        return true; // This is required or else PlaceholderAPI will unregister the Expansion on reload
     }
 
     @Override
-    public String onPlaceholderRequest(Player player, String identifier) {
-        KothManager kothManager = plugin.getKothManager();
+    public String onPlaceholderRequest(Player player, @NotNull String params) {
+        if (player == null) {
+            return "";
+        }
+
+        PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
         
         // Player-specific placeholders
-        if (player != null) {
-            switch (identifier.toLowerCase()) {
-                case "wins":
-                case "player_wins":
-                    return String.valueOf(playerDataManager.getWins(player.getUniqueId()));
-                    
-                case "last_win":
-                case "player_last_win":
-                    long lastWin = playerDataManager.getLastWinTime(player.getUniqueId());
-                    return lastWin > 0 ? String.valueOf(lastWin) : "Never";
-                    
-                case "is_capturing":
-                    UUID capturingPlayer = kothManager.getCapturingPlayer();
-                    return String.valueOf(capturingPlayer != null && capturingPlayer.equals(player.getUniqueId()));
-                    
-                case "rank":
-                case "player_rank":
-                    return String.valueOf(getPlayerRank(player.getUniqueId()));
+        switch (params.toLowerCase()) {
+            case "player_wins":
+                return String.valueOf(playerData.getWins());
+            case "player_captures":
+                return String.valueOf(playerData.getCaptures());
+            case "player_time_spent":
+                return formatTime(playerData.getTimeSpent());
+            case "player_longest_capture":
+                return formatTime(playerData.getLongestCapture());
+            case "player_current_streak":
+                return String.valueOf(playerData.getCurrentStreak());
+            case "player_best_streak":
+                return String.valueOf(playerData.getBestStreak());
+        }
+
+        // Current KOTH placeholders
+        Koth currentKoth = plugin.getKothManager().getCurrentKoth();
+        if (currentKoth == null) {
+            switch (params.toLowerCase()) {
+                case "current_koth":
+                case "current_koth_name":
+                case "current_koth_world":
+                case "current_controller":
+                case "current_time_left":
+                case "current_capture_time":
+                case "current_max_time":
+                    return "None";
+                case "is_koth_active":
+                    return "false";
+                default:
+                    return null;
             }
         }
-        
-        // Global placeholders
-        switch (identifier.toLowerCase()) {
-            case "active":
+
+        switch (params.toLowerCase()) {
             case "current_koth":
-                String activeKoth = kothManager.getActiveKoth();
-                return activeKoth != null ? activeKoth : "None";
-                
-            case "is_active":
-                return String.valueOf(kothManager.getActiveKoth() != null);
-                
-            case "capturing_player":
-                UUID capturingPlayer = kothManager.getCapturingPlayer();
-                if (capturingPlayer != null) {
-                    Player capturingPlayerObj = plugin.getServer().getPlayer(capturingPlayer);
-                    return capturingPlayerObj != null ? capturingPlayerObj.getName() : "Unknown";
-                }
-                return "None";
-                
-            case "progress":
-            case "capture_progress":
-                return String.valueOf(kothManager.getCaptureProgress());
-                
-            case "progress_percentage":
-                int progress = kothManager.getCaptureProgress();
-                int total = kothManager.getCaptureTime();
-                return total > 0 ? String.format("%.1f", ((double) progress / total) * 100) : "0.0";
-                
-            case "time_left":
-            case "remaining_time":
-                int remaining = kothManager.getCaptureTime() - kothManager.getCaptureProgress();
-                return String.valueOf(Math.max(0, remaining));
-                
-            case "total_time":
-            case "capture_time":
-                return String.valueOf(kothManager.getCaptureTime());
-                
-            case "total_players":
-                return String.valueOf(playerDataManager.getTotalPlayers());
-                
-            case "total_wins":
-                return String.valueOf(playerDataManager.getTotalWins());
-                
-            case "regions_count":
-                return String.valueOf(kothManager.getKothRegions().size());
+            case "current_koth_name":
+                return currentKoth.getName();
+            case "current_koth_world":
+                return currentKoth.getWorld();
+            case "current_controller":
+                Player controller = currentKoth.getCurrentController();
+                return controller != null ? controller.getName() : "None";
+            case "current_time_left":
+                return formatTime(currentKoth.getTimeLeft());
+            case "current_capture_time":
+                return formatTime(currentKoth.getCaptureTime());
+            case "current_max_time":
+                return formatTime(currentKoth.getMaxCaptureTime());
+            case "is_koth_active":
+                return String.valueOf(currentKoth.isActive());
+            case "current_participants":
+                return String.valueOf(currentKoth.getParticipants().size());
         }
-        
-        // Top player placeholders (top_1_name, top_1_wins, etc.)
-        if (identifier.toLowerCase().startsWith("top_")) {
-            String[] parts = identifier.split("_");
+
+        // Global statistics
+        switch (params.toLowerCase()) {
+            case "total_koths_created":
+                return String.valueOf(plugin.getKothManager().getKoths().size());
+            case "koths_won_today":
+                // This would require tracking daily statistics
+                return "0";
+            case "active_koths":
+                return plugin.getKothManager().getCurrentKoth() != null ? "1" : "0";
+        }
+
+        // Top player placeholders (1-10)
+        if (params.startsWith("top_wins_")) {
+            try {
+                int position = Integer.parseInt(params.substring(9));
+                String topPlayer = playerDataManager.getTopPlayerByWins(position);
+                return topPlayer != null ? topPlayer : "None";
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        if (params.startsWith("top_wins_count_")) {
+            try {
+                int position = Integer.parseInt(params.substring(15));
+                int wins = playerDataManager.getTopWinsCount(position);
+                return String.valueOf(wins);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        if (params.startsWith("top_captures_")) {
+            try {
+                int position = Integer.parseInt(params.substring(13));
+                String topPlayer = playerDataManager.getTopPlayerByCaptures(position);
+                return topPlayer != null ? topPlayer : "None";
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        if (params.startsWith("top_captures_count_")) {
+            try {
+                int position = Integer.parseInt(params.substring(19));
+                int captures = playerDataManager.getTopCapturesCount(position);
+                return String.valueOf(captures);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        if (params.startsWith("top_time_")) {
+            try {
+                int position = Integer.parseInt(params.substring(9));
+                String topPlayer = playerDataManager.getTopPlayerByTime(position);
+                return topPlayer != null ? topPlayer : "None";
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        if (params.startsWith("top_time_count_")) {
+            try {
+                int position = Integer.parseInt(params.substring(15));
+                long time = playerDataManager.getTopTimeCount(position);
+                return formatTime(time);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        // KOTH-specific placeholders (ultrakoth_koth_<kothname>_<parameter>)
+        if (params.startsWith("koth_")) {
+            String[] parts = params.split("_", 3);
             if (parts.length >= 3) {
-                try {
-                    int position = Integer.parseInt(parts[1]);
-                    String type = parts[2].toLowerCase();
-                    
-                    return getTopPlayerInfo(position, type);
-                } catch (NumberFormatException e) {
-                    return "";
+                String kothName = parts[1];
+                String parameter = parts[2];
+                
+                Koth koth = plugin.getKothManager().getKoth(kothName);
+                if (koth != null) {
+                    switch (parameter.toLowerCase()) {
+                        case "name":
+                            return koth.getName();
+                        case "world":
+                            return koth.getWorld();
+                        case "active":
+                            return String.valueOf(koth.isActive());
+                        case "controller":
+                            Player controller = koth.getCurrentController();
+                            return controller != null ? controller.getName() : "None";
+                        case "timeleft":
+                            return formatTime(koth.getTimeLeft());
+                        case "capturetime":
+                            return formatTime(koth.getCaptureTime());
+                        case "maxtime":
+                            return formatTime(koth.getMaxCaptureTime());
+                        case "participants":
+                            return String.valueOf(koth.getParticipants().size());
+                    }
                 }
             }
         }
-        
-        return null;
+
+        return null; // Placeholder is unknown by the expansion
     }
 
-    private int getPlayerRank(UUID playerUUID) {
-        int playerWins = playerDataManager.getWins(playerUUID);
-        int rank = 1;
+    private String formatTime(long seconds) {
+        if (seconds <= 0) return "0s";
         
-        for (int wins : playerDataManager.getTopPlayers(Integer.MAX_VALUE).values()) {
-            if (wins > playerWins) {
-                rank++;
-            }
-        }
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
         
-        return rank;
-    }
-
-    private String getTopPlayerInfo(int position, String type) {
-        var topPlayers = playerDataManager.getTopPlayers(position);
-        
-        if (topPlayers.size() < position) {
-            return type.equals("name") ? "None" : "0";
-        }
-        
-        UUID playerUUID = (UUID) topPlayers.keySet().toArray()[position - 1];
-        
-        switch (type) {
-            case "name":
-                Player player = plugin.getServer().getPlayer(playerUUID);
-                return player != null ? player.getName() : "Unknown";
-                
-            case "wins":
-                return String.valueOf(topPlayers.get(playerUUID));
-                
-            case "uuid":
-                return playerUUID.toString();
-                
-            default:
-                return "";
+        if (hours > 0) {
+            return String.format("%dh %dm %ds", hours, minutes, secs);
+        } else if (minutes > 0) {
+            return String.format("%dm %ds", minutes, secs);
+        } else {
+            return String.format("%ds", secs);
         }
     }
 }
