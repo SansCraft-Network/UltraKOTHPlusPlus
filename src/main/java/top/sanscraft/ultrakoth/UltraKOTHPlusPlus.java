@@ -24,32 +24,48 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
     public void onEnable() {
         getLogger().info("Starting UltraKOTHPlusPlus initialization...");
         
+        instance = this;
+        getLogger().info("Plugin instance set successfully");
+        
+        getLogger().info("Loading default configuration...");
+        saveDefaultConfig();
+        getLogger().info("Configuration loaded successfully");
+        
+        // Initialize PlayerDataManager with error handling
+        getLogger().info("Initializing PlayerDataManager...");
         try {
-            instance = this;
-            getLogger().info("Plugin instance set successfully");
-            
-            getLogger().info("Loading default configuration...");
-            saveDefaultConfig();
-            getLogger().info("Configuration loaded successfully");
-            
-            // Initialize managers
-            getLogger().info("Initializing PlayerDataManager...");
             playerDataManager = new PlayerDataManager(this);
             getLogger().info("PlayerDataManager initialized successfully");
-            
-            getLogger().info("Initializing KothManager...");
+        } catch (Exception e) {
+            getLogger().severe("Failed to initialize PlayerDataManager: " + e.getMessage());
+            throw new RuntimeException("PlayerDataManager initialization failed", e);
+        }
+        
+        // Initialize KothManager with error handling
+        getLogger().info("Initializing KothManager...");
+        try {
             kothManager = new KothManager(this);
             getLogger().info("KothManager initialized successfully");
-            
-            getLogger().info("Initializing WorldGuardHook...");
+        } catch (Exception e) {
+            getLogger().severe("Failed to initialize KothManager: " + e.getMessage());
+            throw new RuntimeException("KothManager initialization failed", e);
+        }
+        
+        // Initialize WorldGuardHook with error handling
+        getLogger().info("Initializing WorldGuardHook...");
+        try {
             worldGuardHook = new WorldGuardHook();
             getLogger().info("WorldGuardHook initialized successfully (WorldGuard " + 
                 (worldGuardHook.isEnabled() ? "detected" : "not detected") + ")");
-            
-            // BossBarManager will be created per KOTH event
-            
-            // Register command
-            getLogger().info("Registering KOTH command...");
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize WorldGuardHook: " + e.getMessage());
+            getLogger().warning("WorldGuard integration will be disabled");
+            worldGuardHook = null;
+        }
+        
+        // Register command with error handling
+        getLogger().info("Registering KOTH command...");
+        try {
             if (getCommand("koth") != null) {
                 KothCommand kothCommand = new KothCommand(this);
                 getCommand("koth").setExecutor(kothCommand);
@@ -57,26 +73,37 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
                 getLogger().info("KOTH command registered successfully");
             } else {
                 getLogger().severe("Failed to register KOTH command - command not found in plugin.yml!");
+                throw new RuntimeException("KOTH command not found in plugin.yml");
             }
-            
-            // Register PlaceholderAPI if present
-            if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-                getLogger().info("PlaceholderAPI detected, registering hook...");
+        } catch (Exception e) {
+            getLogger().severe("Failed to register KOTH command: " + e.getMessage());
+            throw new RuntimeException("Command registration failed", e);
+        }
+        
+        // Register PlaceholderAPI if present
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            getLogger().info("PlaceholderAPI detected, registering hook...");
+            try {
                 boolean registered = new PlaceholderAPIHook(this, playerDataManager).register();
                 if (registered) {
                     getLogger().info("PlaceholderAPI hook registered successfully");
                 } else {
                     getLogger().warning("Failed to register PlaceholderAPI hook");
                 }
-            } else {
-                getLogger().info("PlaceholderAPI not detected - placeholders will not be available");
+            } catch (Exception e) {
+                getLogger().warning("Error registering PlaceholderAPI hook: " + e.getMessage());
+                getLogger().warning("PlaceholderAPI integration will be disabled");
             }
-            
-            // Schedule KOTH events if enabled
-            boolean scheduleEnabled = getConfig().getBoolean("koth.schedule.enabled", false);
-            getLogger().info("KOTH scheduling " + (scheduleEnabled ? "enabled" : "disabled"));
-            
-            if (scheduleEnabled) {
+        } else {
+            getLogger().info("PlaceholderAPI not detected - placeholders will not be available");
+        }
+        
+        // Schedule KOTH events if enabled
+        boolean scheduleEnabled = getConfig().getBoolean("koth.schedule.enabled", false);
+        getLogger().info("KOTH scheduling " + (scheduleEnabled ? "enabled" : "disabled"));
+        
+        if (scheduleEnabled) {
+            try {
                 int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
                 int interval = intervalMinutes * 60 * 20; // Convert to ticks
                 getLogger().info("Scheduling KOTH events every " + intervalMinutes + " minutes (" + interval + " ticks)");
@@ -88,24 +115,25 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
                     @Override
                     public void run() {
                         getLogger().info("Scheduled KOTH event trigger - attempting to start random KOTH");
-                        kothManager.startRandomKoth();
-                        
-                        // Update next KOTH time for the following event
-                        int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
-                        nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+                        try {
+                            kothManager.startRandomKoth();
+                            
+                            // Update next KOTH time for the following event
+                            int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
+                            nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+                        } catch (Exception e) {
+                            getLogger().warning("Error during scheduled KOTH start: " + e.getMessage());
+                        }
                     }
                 }.runTaskTimer(this, interval, interval);
                 getLogger().info("KOTH scheduler started successfully");
+            } catch (Exception e) {
+                getLogger().warning("Failed to start KOTH scheduler: " + e.getMessage());
+                getLogger().warning("Automatic KOTH events will be disabled");
             }
-            
-            getLogger().info("UltraKOTHPlusPlus enabled successfully!");
-            
-        } catch (Exception e) {
-            getLogger().severe("Critical error during plugin initialization:");
-            getLogger().severe("Error: " + e.getMessage());
-            e.printStackTrace();
-            getLogger().severe("Plugin may not function correctly!");
         }
+        
+        getLogger().info("UltraKOTHPlusPlus enabled successfully!");
     }
 
     @Override

@@ -169,6 +169,8 @@ Use these placeholders in other plugins:
 - `%ultrakoth_total_time%` - Total capture time required
 - `%ultrakoth_total_players%` - Total players with recorded wins
 - `%ultrakoth_total_wins%` - Total wins across all players
+- `%ultrakoth_time_until_next%` - Time until next KOTH starts (hh:mm:ss or mm:ss format)
+- `%ultrakoth_next_koth_time%` - Same as above, formatted countdown to next event
 
 ### Top Player Placeholders
 - `%ultrakoth_top_1_name%` - Name of #1 player
