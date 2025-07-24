@@ -228,8 +228,16 @@ public class KothCommand implements CommandExecutor, TabCompleter {
 
         try {
             plugin.reloadConfig();
+            
+            // Reload KOTH regions
+            plugin.getKothManager().reloadRegions();
+            
+            // Restart scheduler to apply new settings
+            plugin.startScheduler();
+            
             sender.sendMessage("§aConfiguration reloaded successfully!");
-            sender.sendMessage("§eNote: You may need to restart the plugin for some changes to take effect.");
+            sender.sendMessage("§aKOTH regions reloaded!");
+            sender.sendMessage("§aScheduler restarted with new settings!");
         } catch (Exception e) {
             sender.sendMessage("§cError reloading configuration: " + e.getMessage());
             plugin.getLogger().severe("Error reloading configuration: " + e.getMessage());
@@ -357,7 +365,14 @@ public class KothCommand implements CommandExecutor, TabCompleter {
         if (success) {
             plugin.saveConfig();
             sender.sendMessage("§aConfiguration updated: §b" + setting + " §a= §b" + value);
-            sender.sendMessage("§eUse §b/koth reload §eto apply changes.");
+            
+            // If schedule-related settings were changed, restart the scheduler
+            if (setting.startsWith("schedule-")) {
+                plugin.startScheduler();
+                sender.sendMessage("§eScheduler restarted with new settings.");
+            } else {
+                sender.sendMessage("§eUse §b/koth reload §eto apply changes.");
+            }
         } else {
             sender.sendMessage("§cFailed to set configuration value. Check the value format.");
         }

@@ -19,6 +19,7 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
     private BossBarManager bossBarManager;
     private WorldGuardHook worldGuardHook;
     private long nextKothTime = 0; // Timestamp of next scheduled KOTH
+    private BukkitTask schedulerTask = null; // Track the scheduler task
 
     @Override
     public void onEnable() {
@@ -99,45 +100,14 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
         }
         
         // Schedule KOTH events if enabled
-        boolean scheduleEnabled = getConfig().getBoolean("koth.schedule.enabled", false);
-        getLogger().info("KOTH scheduling " + (scheduleEnabled ? "enabled" : "disabled"));
-        
-        if (scheduleEnabled) {
-            try {
-                int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
-                int interval = intervalMinutes * 60 * 20; // Convert to ticks
-                getLogger().info("Scheduling KOTH events every " + intervalMinutes + " minutes (" + interval + " ticks)");
-                
-                // Set the next KOTH time (current time + interval in milliseconds)
-                nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
-                
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        getLogger().info("Scheduled KOTH event trigger - attempting to start random KOTH");
-                        try {
-                            kothManager.startRandomKoth();
-                            
-                            // Update next KOTH time for the following event
-                            int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
-                            nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
-                        } catch (Exception e) {
-                            getLogger().warning("Error during scheduled KOTH start: " + e.getMessage());
-                        }
-                    }
-                }.runTaskTimer(this, interval, interval);
-                getLogger().info("KOTH scheduler started successfully");
-            } catch (Exception e) {
-                getLogger().warning("Failed to start KOTH scheduler: " + e.getMessage());
-                getLogger().warning("Automatic KOTH events will be disabled");
-            }
-        }
+        startScheduler();
         
         getLogger().info("UltraKOTHPlusPlus enabled successfully!");
     }
 
     @Override
     public void onDisable() {
+        stopScheduler();
         if (playerDataManager != null) playerDataManager.save();
         getLogger().info("UltraKOTHPlusPlus disabled!");
     }
@@ -168,5 +138,60 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
 
     public WorldGuardHook getWorldGuardHook() {
         return worldGuardHook;
+    }
+
+    // Scheduler management methods
+    public void startScheduler() {
+        stopScheduler(); // Stop existing scheduler first
+        
+        boolean scheduleEnabled = getConfig().getBoolean("koth.schedule.enabled", false);
+        getLogger().info("KOTH scheduling " + (scheduleEnabled ? "enabled" : "disabled"));
+        
+        if (scheduleEnabled) {
+            try {
+                int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
+                int interval = intervalMinutes * 60 * 20; // Convert to ticks
+                getLogger().info("Scheduling KOTH events every " + intervalMinutes + " minutes (" + interval + " ticks)");
+                
+                // Set the next KOTH time (current time + interval in milliseconds)
+                nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+                
+                schedulerTask = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        getLogger().info("Scheduled KOTH event trigger - attempting to start random KOTH");
+                        try {
+                            kothManager.startRandomKoth();
+                            
+                            // Update next KOTH time for the following event
+                            int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
+                            nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+                        } catch (Exception e) {
+                            getLogger().warning("Error during scheduled KOTH start: " + e.getMessage());
+                        }
+                    }
+                }.runTaskTimer(this, interval, interval);
+                getLogger().info("KOTH scheduler started successfully");
+            } catch (Exception e) {
+                getLogger().warning("Failed to start KOTH scheduler: " + e.getMessage());
+                getLogger().warning("Automatic KOTH events will be disabled");
+            }
+        }
+    }
+
+    public void stopScheduler() {
+        if (schedulerTask != null) {
+            schedulerTask.cancel();
+            schedulerTask = null;
+            getLogger().info("KOTH scheduler stopped");
+        }
+    }
+
+    public void updateNextKothTime() {
+        if (getConfig().getBoolean("koth.schedule.enabled", false)) {
+            int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
+            nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+            getLogger().info("Updated next KOTH time due to manual start");
+        }
     }
 }

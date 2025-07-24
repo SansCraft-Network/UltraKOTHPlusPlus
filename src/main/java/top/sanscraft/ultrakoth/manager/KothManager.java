@@ -154,6 +154,9 @@ public class KothManager implements Listener {
         playEffects("start", region.getLocation());
 
         plugin.getLogger().info("Started KOTH at " + regionName + " with " + captureTime + " second capture time");
+        
+        // Update the scheduler's next KOTH time to account for this manual start
+        plugin.updateNextKothTime();
     }
 
     public void stopKoth() {
@@ -433,6 +436,13 @@ public class KothManager implements Listener {
 
     public Map<String, KothRegion> getKothRegions() {
         return new HashMap<>(kothRegions);
+    }
+
+    // Reload method for when configuration changes
+    public void reloadRegions() {
+        kothRegions.clear();
+        loadKothRegions();
+        plugin.getLogger().info("Reloaded " + kothRegions.size() + " KOTH regions");
     }
 
     public static class KothRegion {

@@ -1,92 +1,272 @@
+# ========================================
 # UltraKOTHPlusPlus Configuration
 # Author: SansNom | Organization: sanscraft.top
+# ========================================
+#
+# ========================================
+# 📋 AVAILABLE PLACEHOLDERS:
+# ========================================
+# Use these placeholders in messages, rewards, and other text:
+# 
+# Player Placeholders:
+# {player} - Player's name
+# {location} - KOTH region name
+#
+# PlaceholderAPI Integration (if installed):
+# %ultrakoth_wins% - Player's total KOTH wins
+# %ultrakoth_active_koth% - Currently active KOTH region name
+# %ultrakoth_capturing_player% - Player currently capturing KOTH
+# %ultrakoth_capture_progress% - Current capture progress (seconds)
+# %ultrakoth_capture_time% - Total time needed to capture
+# %ultrakoth_next_koth_time% - Time until next scheduled KOTH
+#
+# ========================================
+# 🎮 AVAILABLE COMMANDS:
+# ========================================
+# 
+# Player Commands:
+# /koth help - Show help
+# /koth status - Show current KOTH status
+# /koth wins [player] - Show KOTH wins
+# /koth list - List all KOTH regions
+#
+# Admin Commands (requires ultrakoth.admin permission):
+# /koth start [region] - Start KOTH event
+# /koth stop - Stop current KOTH event
+# /koth reload - Reload configuration
+# /koth config <setting> [value] - Modify configuration
+# /koth create <name> coords <radius> - Create coordinate-based region
+# /koth create <name> worldguard <region> - Create WorldGuard-based region
+#
+# ========================================
+# ⚙️ CONFIGURATION MANAGEMENT:
+# ========================================
+# You can modify most settings in-game using:
+# /koth config <setting> <value>
+#
+# Available settings:
+# - capture-time <seconds>
+# - schedule-enabled <true/false>
+# - schedule-interval <minutes>
+# - debug <true/false>
+# - bossbar-color <BLUE|GREEN|PINK|PURPLE|RED|WHITE|YELLOW>
+# - bossbar-style <SOLID|SEGMENTED_6|SEGMENTED_10|SEGMENTED_12|SEGMENTED_20>
+#
+# ========================================
+# 🔧 PERMISSIONS:
+# ========================================
+# ultrakoth.admin - Access to all admin commands
+# (Regular players can use status, wins, list commands without permissions)
+#
+# ========================================
+# 🎵 SOUND & PARTICLE EFFECTS:
+# ========================================
+# Valid sound names: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
+# Valid particle names: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
+#
+# ========================================
+# 💰 REWARD COMMANDS:
+# ========================================
+# Rewards are executed as console commands when a player wins
+# Use {player} placeholder for the winner's name
+# Examples:
+# - "give {player} diamond 5"
+# - "eco give {player} 1000"
+# - "lp user {player} permission set vip.rank true"
+# - "broadcast &a{player} &ewon the KOTH!"
+#
+# ========================================
 
 koth:
-  # Capture settings
-  capture-time-seconds: 300  # Time needed to capture KOTH (5 minutes)
+  # ========================================
+  # ⏱️ CAPTURE SETTINGS
+  # ========================================
+  capture-time-seconds: 300  # Time needed to capture KOTH (5 minutes = 300 seconds)
+                              # Players must stay in the region for this duration to win
   
-  # Boss bar settings
+  # ========================================
+  # 📊 BOSS BAR SETTINGS
+  # ========================================
   bossbar:
     enabled: true
-    title: "&eKOTH being captured by &a{player}"
-    color: "BLUE"  # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
-    style: "SOLID"  # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
-    countdown: true  # Show remaining time in title
+    title: "&eKOTH being captured by &a{player}"  # Title shown on boss bar
+                                                   # Available placeholders: {player}, {location}
+    color: "BLUE"      # Boss bar color: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+    style: "SOLID"     # Boss bar style: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    countdown: true    # Show remaining time in boss bar title (adds countdown in seconds)
   
-  # Broadcast messages
+  # ========================================
+  # 📢 BROADCAST MESSAGES
+  # ========================================
+  # These messages are sent to all players on the server
+  # Use & for color codes, {player} for player name, {location} for KOTH region name
   broadcast:
-    start: "&6KOTH has started at &b{location}!"
-    capture: "&a{player} &eis capturing the KOTH!"
-    win: "&b{player} &ahas won the KOTH at &e{location}!"
-    stop: "&cKOTH at &e{location} &chas been stopped!"
+    start: "&6KOTH has started at &b{location}!"           # When KOTH event begins
+    capture: "&a{player} &eis capturing the KOTH!"        # When a player enters the region
+    win: "&b{player} &ahas won the KOTH at &e{location}!" # When a player successfully captures
+    stop: "&cKOTH at &e{location} &chas been stopped!"    # When KOTH is manually stopped
   
-  # Rewards given to winner
+  # ========================================
+  # 💰 VICTORY REWARDS
+  # ========================================
+  # Commands executed when a player wins KOTH
+  # Each command is run from the console with {player} replaced by winner's name
   rewards:
-    - "give {player} diamond 5"
-    - "give {player} emerald 10"
-    - "eco give {player} 1000"
-    - "broadcast &a{player} &ewon the KOTH and received rewards!"
+    - "give {player} diamond 5"                                    # Give 5 diamonds
+    - "give {player} emerald 10"                                   # Give 10 emeralds  
+    - "eco give {player} 1000"                                     # Give $1000 (requires economy plugin)
+    - "broadcast &a{player} &ewon the KOTH and received rewards!" # Announce victory
+    # Add more reward commands here:
+    # - "lp user {player} permission set vip.temp true"          # Give temporary VIP (LuckPerms)
+    # - "crate give physical {player} vote 1"                    # Give crate key
+    # - "minecraft:title @a title {\"text\":\"{player} won KOTH!\",\"color\":\"gold\"}" # Title command
   
-  # Sound effects
+  # ========================================
+  # 🎵 SOUND EFFECTS
+  # ========================================
+  # Sounds played to all players during KOTH events
+  # Set to empty string "" to disable specific sounds
+  # Full list: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
   sounds:
-    start: "ENTITY_WITHER_SPAWN"
-    capture: "ENTITY_EXPERIENCE_ORB_PICKUP"
-    win: "UI_TOAST_CHALLENGE_COMPLETE"
-    stop: "BLOCK_ANVIL_BREAK"
+    start: "ENTITY_WITHER_SPAWN"           # When KOTH starts
+    capture: "ENTITY_EXPERIENCE_ORB_PICKUP" # When player starts capturing
+    win: "UI_TOAST_CHALLENGE_COMPLETE"     # When player wins
+    stop: "BLOCK_ANVIL_BREAK"              # When KOTH is stopped
   
-  # Particle effects
+  # ========================================
+  # ✨ PARTICLE EFFECTS
+  # ========================================
+  # Particles spawned at KOTH region center during events
+  # Set to empty string "" to disable specific particles
+  # Full list: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
   particles:
-    start: "VILLAGER_HAPPY"
-    capture: "CRIT_MAGIC"
-    win: "FIREWORK"
-    stop: "SMOKE_LARGE"
+    start: "VILLAGER_HAPPY"    # When KOTH starts
+    capture: "CRIT_MAGIC"      # When player starts capturing
+    win: "FIREWORK"            # When player wins  
+    stop: "SMOKE_LARGE"        # When KOTH is stopped
   
-  # Automatic scheduling
+  # ========================================
+  # 📅 AUTOMATIC SCHEDULING
+  # ========================================
+  # Automatically start random KOTH events at regular intervals
   schedule:
-    enabled: true
-    interval-minutes: 60  # Start KOTH every 60 minutes
-    announce-minutes-before: 5  # Announce 5 minutes before start
+    enabled: true                    # Enable/disable automatic KOTH scheduling
+    interval-minutes: 60             # Start KOTH every X minutes (60 = 1 hour)
+    announce-minutes-before: 5       # Announce upcoming KOTH X minutes before start
+                                     # (Feature planned for future update)
 
 # KOTH locations/regions
 koth-locations:
-  # Example KOTH region using coordinates and radius
-  example:
-    use-worldguard: false  # Use coordinate/radius based detection
-    world: "world"
-    x: 100
-    y: 65
-    z: 100
-    radius: 10
-    # region: ""  # Not used when use-worldguard is false
-  
-  # Example WorldGuard region
-  kothplace:
-    use-worldguard: true   # Use WorldGuard region detection
-    world: "world"
-    region: "kothplace"    # WorldGuard region name
-    # x, y, z, radius are ignored when use-worldguard is true
-  
-  # Add more KOTH locations here
-  # desert:
-  #   use-worldguard: false
+  # Example KOTH region using coordinates and radius (COMMENTED OUT)
+  # Remove the # symbols below to enable this example region
+  # example:
+  #   use-worldguard: false  # Use coordinate/radius based detection
   #   world: "world"
-  #   x: -200
-  #   y: 70
-  #   z: 300
-  #   radius: 15
+  #   x: 100
+  #   y: 65
+  #   z: 100
+  #   radius: 10
+  #   # region: ""  # Not used when use-worldguard is false
   
-  # nether:
+  # Example WorldGuard region (COMMENTED OUT)
+  # Remove the # symbols below to enable this example region
+  # kothplace:
+  #   use-worldguard: true   # Use WorldGuard region detection
+  #   world: "world"
+  #   region: "kothplace"    # WorldGuard region name
+  #   # x, y, z, radius are ignored when use-worldguard is true
+  
+  # ========================================
+  # HOW TO CREATE KOTH REGIONS:
+  # ========================================
+  # 
+  # METHOD 1: Coordinate/Radius Based
+  # my_region_name:
+  #   use-worldguard: false
+  #   world: "world"          # World name
+  #   x: 100                  # X coordinate of center
+  #   y: 65                   # Y coordinate of center  
+  #   z: 100                  # Z coordinate of center
+  #   radius: 15              # Radius in blocks
+  #
+  # METHOD 2: WorldGuard Region Based
+  # my_wg_region:
   #   use-worldguard: true
-  #   world: "world_nether"
-  #   region: "koth_nether"
+  #   world: "world"          # World name
+  #   region: "my_wg_region"  # WorldGuard region name
+  #
+  # ========================================
+  # IN-GAME REGION CREATION:
+  # ========================================
+  # You can also create regions in-game using commands:
+  # /koth create <name> coords <radius>     - Create at your location
+  # /koth create <name> worldguard <region> - Use existing WG region
+  #
+  # Add more KOTH locations here...
 
-# Plugin settings
+# ========================================
+# 🔧 PLUGIN SETTINGS
+# ========================================
 settings:
-  # Debug mode - enables additional logging
-  debug: true
+  # ========================================
+  # 🐛 DEBUG MODE
+  # ========================================
+  debug: true    # Enable debug logging for troubleshooting
+                 # Shows detailed player movement and region detection info
+                 # Disable this in production to reduce console spam
+                 # You can toggle this with: /koth config debug false
   
-  # Data save interval (minutes)
-  save-interval: 5
+  # ========================================
+  # 💾 DATA MANAGEMENT
+  # ========================================
+  save-interval: 5  # Save player data every X minutes
+                    # Lower values = more frequent saves (safer but more I/O)
+                    # Higher values = less frequent saves (better performance)
   
-  # Maximum number of concurrent KOTH events
-  max-concurrent-koths: 1
+  # ========================================
+  # 🚫 CONCURRENCY LIMITS
+  # ========================================
+  max-concurrent-koths: 1  # Maximum number of KOTH events running simultaneously
+                           # Currently only supports 1, may be expanded in future updates
+
+# ========================================
+# 📚 ADDITIONAL RESOURCES:
+# ========================================
+# 
+# 🌐 Documentation: Check the README.md file for detailed setup instructions
+# 🐛 Bug Reports: Report issues on the plugin's GitHub repository
+# 💡 Feature Requests: Suggest new features on GitHub or Discord
+# 🎮 Discord Support: Join our Discord server for community support
+# 📝 Wiki: Check the wiki for advanced configuration examples
+#
+# ========================================
+# 🚀 QUICK START GUIDE:
+# ========================================
+#
+# 1. Create your first KOTH region:
+#    - In-game: /koth create myregion coords 15
+#    - Or edit this config file and add a region under koth-locations
+#
+# 2. Start a KOTH event:
+#    - /koth start myregion
+#    - Or enable scheduling: /koth config schedule-enabled true
+#
+# 3. Configure settings:
+#    - Use /koth config <setting> <value> for quick changes
+#    - Or edit this file and use /koth reload
+#
+# 4. Monitor events:
+#    - /koth status - Check current KOTH status
+#    - /koth wins [player] - Check win statistics
+#
+# ========================================
+# 🔄 VERSION INFORMATION:
+# ========================================
+# Config Version: 1.0
+# Plugin Version: 1.0.0
+# Last Updated: 2025
+#
+# If you encounter issues after plugin updates,
+# try deleting this config file and let the plugin
+# regenerate it with the latest defaults.
+# ========================================
