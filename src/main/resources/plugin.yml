@@ -4,19 +4,52 @@ version: 1.0.0
 author: SansNom
 website: https://sanscraft.top
 description: Advanced KOTH plugin with WorldGuard, PlaceholderAPI, bossbar, rewards, and more.
-dependencies:
-  softdepend:
-    - WorldGuard
-    - PlaceholderAPI
+api-version: 1.19
+softdepend:
+  - WorldGuard
+  - PlaceholderAPI
+  - Vault
 commands:
   koth:
     description: Main KOTH command
     usage: /koth <subcommand>
-    aliases: [koth, kingofthehill]
+    aliases: [kingofthehill]
 permissions:
+  ultrakoth.*:
+    description: All UltraKOTHPlusPlus permissions
+    default: op
+    children:
+      ultrakoth.admin: true
+      ultrakoth.player: true
   ultrakoth.admin:
     description: Allows admin commands for UltraKOTHPlusPlus
     default: op
+    children:
+      ultrakoth.admin.start: true
+      ultrakoth.admin.stop: true
+      ultrakoth.admin.reload: true
+      ultrakoth.admin.setwins: true
+  ultrakoth.admin.start:
+    description: Allows starting KOTH events
+    default: op
+  ultrakoth.admin.stop:
+    description: Allows stopping KOTH events
+    default: op
+  ultrakoth.admin.reload:
+    description: Allows reloading plugin configuration
+    default: op
+  ultrakoth.admin.setwins:
+    description: Allows setting player win counts
+    default: op
   ultrakoth.player:
     description: Allows player KOTH participation
+    default: true
+    children:
+      ultrakoth.player.participate: true
+      ultrakoth.player.stats: true
+  ultrakoth.player.participate:
+    description: Allows participating in KOTH events
+    default: true
+  ultrakoth.player.stats:
+    description: Allows viewing KOTH statistics
     default: true

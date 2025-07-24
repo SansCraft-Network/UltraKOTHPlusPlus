@@ -2,36 +2,86 @@
 # Author: SansNom | Organization: sanscraft.top
 
 koth:
+  # Capture settings
+  capture-time-seconds: 300  # Time needed to capture KOTH (5 minutes)
+  
+  # Boss bar settings
   bossbar:
     enabled: true
     title: "&eKOTH being captured by &a{player}"
-    color: "BLUE"
-    style: "SOLID"
-    countdown: true
+    color: "BLUE"  # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+    style: "SOLID"  # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    countdown: true  # Show remaining time in title
+  
+  # Broadcast messages
   broadcast:
     start: "&6KOTH has started at &b{location}!"
     capture: "&a{player} &eis capturing the KOTH!"
     win: "&b{player} &ahas won the KOTH at &e{location}!"
+    stop: "&cKOTH at &e{location} &chas been stopped!"
+  
+  # Rewards given to winner
   rewards:
     - "give {player} diamond 5"
+    - "give {player} emerald 10"
     - "eco give {player} 1000"
+    - "broadcast &a{player} &ewon the KOTH and received rewards!"
+  
+  # Sound effects
   sounds:
     start: "ENTITY_WITHER_SPAWN"
     capture: "ENTITY_EXPERIENCE_ORB_PICKUP"
     win: "UI_TOAST_CHALLENGE_COMPLETE"
+    stop: "BLOCK_ANVIL_BREAK"
+  
+  # Particle effects
   particles:
     start: "VILLAGER_HAPPY"
     capture: "CRIT_MAGIC"
     win: "FIREWORK"
+    stop: "SMOKE_LARGE"
+  
+  # Automatic scheduling
   schedule:
     enabled: true
-    interval-minutes: 60
-    announce-minutes-before: 5
+    interval-minutes: 60  # Start KOTH every 60 minutes
+    announce-minutes-before: 5  # Announce 5 minutes before start
+
+# KOTH locations/regions
 koth-locations:
+  # Example KOTH region
   example:
     world: "world"
     x: 100
     y: 65
     z: 100
     radius: 10
-    region: "koth_example" # Used if WorldGuard is present
+    region: "koth_example"  # WorldGuard region name (optional)
+  
+  # Add more KOTH locations here
+  # desert:
+  #   world: "world"
+  #   x: -200
+  #   y: 70
+  #   z: 300
+  #   radius: 15
+  #   region: "koth_desert"
+  
+  # nether:
+  #   world: "world_nether"
+  #   x: 0
+  #   y: 64
+  #   z: 0
+  #   radius: 12
+  #   region: "koth_nether"
+
+# Plugin settings
+settings:
+  # Debug mode - enables additional logging
+  debug: false
+  
+  # Data save interval (minutes)
+  save-interval: 5
+  
+  # Maximum number of concurrent KOTH events
+  max-concurrent-koths: 1
