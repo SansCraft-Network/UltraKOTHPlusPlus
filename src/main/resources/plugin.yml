@@ -1,0 +1,22 @@
+name: UltraKOTHPlusPlus
+main: top.sanscraft.ultrakoth.UltraKOTHPlusPlus
+version: 1.0.0
+author: SansNom
+website: https://sanscraft.top
+description: Advanced KOTH plugin with WorldGuard, PlaceholderAPI, bossbar, rewards, and more.
+dependencies:
+  softdepend:
+    - WorldGuard
+    - PlaceholderAPI
+commands:
+  koth:
+    description: Main KOTH command
+    usage: /koth <subcommand>
+    aliases: [koth, kingofthehill]
+permissions:
+  ultrakoth.admin:
+    description: Allows admin commands for UltraKOTHPlusPlus
+    default: op
+  ultrakoth.player:
+    description: Allows player KOTH participation
+    default: true

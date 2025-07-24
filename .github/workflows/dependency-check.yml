@@ -1,0 +1,46 @@
+name: Dependency Check
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Run dependency check
+        run: mvn -B clean compile org.owasp:dependency-check-maven:check
+        
+      - name: Upload dependency check results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
+          retention-days: 30
+          
+      - name: Check for vulnerabilities
+        run: |
+          if [ -f "target/dependency-check-report.xml" ]; then
+            vulnerabilities=$(grep -c "vulnerability" target/dependency-check-report.xml || echo "0")
+            if [ "$vulnerabilities" -gt "0" ]; then
+              echo "::warning::Found $vulnerabilities vulnerabilities in dependencies"
+            fi
+          fi

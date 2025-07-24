@@ -1,0 +1,37 @@
+# UltraKOTHPlusPlus Configuration
+# Author: SansNom | Organization: sanscraft.top
+
+koth:
+  bossbar:
+    enabled: true
+    title: "&eKOTH being captured by &a{player}"
+    color: "BLUE"
+    style: "SOLID"
+    countdown: true
+  broadcast:
+    start: "&6KOTH has started at &b{location}!"
+    capture: "&a{player} &eis capturing the KOTH!"
+    win: "&b{player} &ahas won the KOTH at &e{location}!"
+  rewards:
+    - "give {player} diamond 5"
+    - "eco give {player} 1000"
+  sounds:
+    start: "ENTITY_WITHER_SPAWN"
+    capture: "ENTITY_EXPERIENCE_ORB_PICKUP"
+    win: "UI_TOAST_CHALLENGE_COMPLETE"
+  particles:
+    start: "VILLAGER_HAPPY"
+    capture: "CRIT_MAGIC"
+    win: "FIREWORK"
+  schedule:
+    enabled: true
+    interval-minutes: 60
+    announce-minutes-before: 5
+koth-locations:
+  example:
+    world: "world"
+    x: 100
+    y: 65
+    z: 100
+    radius: 10
+    region: "koth_example" # Used if WorldGuard is present
