@@ -18,6 +18,7 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
     private PlayerDataManager playerDataManager;
     private BossBarManager bossBarManager;
     private WorldGuardHook worldGuardHook;
+    private long nextKothTime = 0; // Timestamp of next scheduled KOTH
 
     @Override
     public void onEnable() {
@@ -80,11 +81,18 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
                 int interval = intervalMinutes * 60 * 20; // Convert to ticks
                 getLogger().info("Scheduling KOTH events every " + intervalMinutes + " minutes (" + interval + " ticks)");
                 
+                // Set the next KOTH time (current time + interval in milliseconds)
+                nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
+                
                 new BukkitRunnable() {
                     @Override
                     public void run() {
                         getLogger().info("Scheduled KOTH event trigger - attempting to start random KOTH");
                         kothManager.startRandomKoth();
+                        
+                        // Update next KOTH time for the following event
+                        int intervalMinutes = getConfig().getInt("koth.schedule.interval-minutes", 60);
+                        nextKothTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000);
                     }
                 }.runTaskTimer(this, interval, interval);
                 getLogger().info("KOTH scheduler started successfully");
@@ -108,6 +116,10 @@ public class UltraKOTHPlusPlus extends JavaPlugin {
 
     public static UltraKOTHPlusPlus getInstance() {
         return instance;
+    }
+    
+    public long getNextKothTime() {
+        return nextKothTime;
     }
 
     public KothManager getKothManager() {

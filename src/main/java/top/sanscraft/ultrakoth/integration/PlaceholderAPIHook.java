@@ -109,6 +109,13 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 return String.valueOf(kothManager.getKothRegions().size());
         }
         
+        // Time-based placeholders
+        switch (params.toLowerCase()) {
+            case "time_until_next":
+            case "next_koth_time":
+                return formatTimeUntilNext();
+        }
+        
         // Top player placeholders using getTopPlayers method
         if (params.startsWith("top_") && params.contains("_name")) {
             try {
@@ -162,5 +169,37 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
         } else {
             return String.format("%ds", secs);
         }
+    }
+    
+    private String formatTimeCountdown(long seconds) {
+        if (seconds <= 0) {
+            return "00:00";
+        }
+        
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+        
+        if (hours > 0) {
+            return String.format("%02d:%02d:%02d", hours, minutes, secs);
+        } else {
+            return String.format("%02d:%02d", minutes, secs);
+        }
+    }
+    
+    private String formatTimeUntilNext() {
+        long nextKothTime = plugin.getNextKothTime();
+        if (nextKothTime == 0) {
+            return "Not scheduled";
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        long timeUntil = (nextKothTime - currentTime) / 1000; // Convert to seconds
+        
+        if (timeUntil <= 0) {
+            return "Starting soon";
+        }
+        
+        return formatTimeCountdown(timeUntil);
     }
 }
