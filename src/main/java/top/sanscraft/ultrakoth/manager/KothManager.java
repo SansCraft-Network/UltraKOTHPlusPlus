@@ -11,7 +11,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import top.sanscraft.ultrakoth.UltraKOTHPlusPlus;
@@ -24,6 +23,7 @@ public class KothManager implements Listener {
     private final Map<String, KothRegion> kothRegions = new HashMap<>();
     private String activeKoth = null;
     private UUID capturingPlayer = null;
+    private final LinkedList<UUID> playerQueue = new LinkedList<>(); // Queue of players in the region
     private int captureProgress = 0;
     private int captureTime = 300; // 300 seconds = 5 minutes
     private BukkitTask captureTask = null;
@@ -176,6 +176,7 @@ public class KothManager implements Listener {
         String stoppedKoth = activeKoth;
         activeKoth = null;
         capturingPlayer = null;
+        playerQueue.clear(); // Clear the player queue
         captureProgress = 0;
 
         plugin.getLogger().info("Stopped KOTH: " + stoppedKoth);
@@ -190,6 +191,7 @@ public class KothManager implements Listener {
         if (region == null) return;
 
         boolean inRegion = isPlayerInRegion(player, region);
+        UUID playerUUID = player.getUniqueId();
         
         // Debug logging
         if (plugin.getConfig().getBoolean("settings.debug", false)) {
@@ -210,46 +212,98 @@ public class KothManager implements Listener {
                 plugin.getLogger().info("  - Distance to center: " + player.getLocation().distance(region.getLocation()));
             }
             plugin.getLogger().info("  - Player in region: " + inRegion);
+            plugin.getLogger().info("  - Current queue: " + playerQueue.size() + " players");
+            plugin.getLogger().info("  - Currently capturing: " + (capturingPlayer != null ? Bukkit.getPlayer(capturingPlayer).getName() : "None"));
         }
 
         if (inRegion) {
-            if (capturingPlayer == null || !capturingPlayer.equals(player.getUniqueId())) {
-                // New player entered or different player
-                capturingPlayer = player.getUniqueId();
-                captureProgress = 0;
-
-                // Cancel existing task
-                if (captureTask != null) {
-                    captureTask.cancel();
+            // Player entered the region
+            if (!playerQueue.contains(playerUUID)) {
+                // Add player to queue if not already in it
+                playerQueue.offer(playerUUID);
+                plugin.getLogger().info(player.getName() + " entered KOTH region and was added to queue (position: " + playerQueue.size() + ")");
+                
+                // If this is the first player in queue and no one is currently capturing
+                if (capturingPlayer == null && playerQueue.peek().equals(playerUUID)) {
+                    startCapturingForPlayer(player, region);
                 }
-
-                // Broadcast capture message
-                String captureMessage = plugin.getConfig().getString("koth.broadcast.capture", "&a{player} &eis capturing the KOTH!")
-                        .replace("{player}", player.getName())
-                        .replace("&", "§");
-                Bukkit.broadcastMessage(captureMessage);
-
-                // Start capture task
-                startCaptureTask(player);
-
-                // Play capture effects
-                playEffects("capture", region.getLocation());
             }
         } else {
-            if (capturingPlayer != null && capturingPlayer.equals(player.getUniqueId())) {
-                // Player left the region
-                capturingPlayer = null;
-                captureProgress = 0;
-
-                if (captureTask != null) {
-                    captureTask.cancel();
-                    captureTask = null;
+            // Player left the region
+            if (playerQueue.contains(playerUUID)) {
+                playerQueue.remove(playerUUID);
+                plugin.getLogger().info(player.getName() + " left KOTH region and was removed from queue");
+                
+                // If this was the capturing player, stop their capture and start next in queue
+                if (capturingPlayer != null && capturingPlayer.equals(playerUUID)) {
+                    stopCurrentCapture();
+                    startNextPlayerCapture(region);
                 }
+            }
+        }
+    }
+    
+    private void startCapturingForPlayer(Player player, KothRegion region) {
+        capturingPlayer = player.getUniqueId();
+        captureProgress = 0;
 
-                // Update boss bar
-                updateBossBar();
+        // Cancel existing task
+        if (captureTask != null) {
+            captureTask.cancel();
+        }
 
-                plugin.getLogger().info(player.getName() + " left the KOTH region, capture reset");
+        // Broadcast capture message
+        String captureMessage = plugin.getConfig().getString("koth.broadcast.capture", "&a{player} &eis capturing the KOTH!")
+                .replace("{player}", player.getName())
+                .replace("&", "§");
+        Bukkit.broadcastMessage(captureMessage);
+
+        // Start capture task
+        startCaptureTask(player);
+
+        // Play capture effects
+        playEffects("capture", region.getLocation());
+        
+        plugin.getLogger().info(player.getName() + " started capturing KOTH");
+    }
+    
+    private void stopCurrentCapture() {
+        if (captureTask != null) {
+            captureTask.cancel();
+            captureTask = null;
+        }
+        
+        Player previousPlayer = capturingPlayer != null ? Bukkit.getPlayer(capturingPlayer) : null;
+        String previousPlayerName = previousPlayer != null ? previousPlayer.getName() : "Unknown";
+        
+        capturingPlayer = null;
+        captureProgress = 0;
+        
+        // Update boss bar
+        updateBossBar();
+        
+        plugin.getLogger().info(previousPlayerName + " stopped capturing KOTH, capture reset");
+    }
+    
+    private void startNextPlayerCapture(KothRegion region) {
+        // Start capture for the next player in queue (if any)
+        if (!playerQueue.isEmpty()) {
+            UUID nextPlayerUUID = playerQueue.peek();
+            Player nextPlayer = Bukkit.getPlayer(nextPlayerUUID);
+            
+            if (nextPlayer != null && nextPlayer.isOnline()) {
+                // Verify the next player is still in the region
+                if (isPlayerInRegion(nextPlayer, region)) {
+                    startCapturingForPlayer(nextPlayer, region);
+                } else {
+                    // Next player is no longer in region, remove from queue and check the next one
+                    playerQueue.poll();
+                    startNextPlayerCapture(region);
+                }
+            } else {
+                // Next player is offline, remove from queue and check the next one
+                playerQueue.poll();
+                startNextPlayerCapture(region);
             }
         }
     }
@@ -257,17 +311,26 @@ public class KothManager implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (activeKoth == null) return;
-        if (capturingPlayer != null && capturingPlayer.equals(event.getPlayer().getUniqueId())) {
-            capturingPlayer = null;
-            captureProgress = 0;
-
-            if (captureTask != null) {
-                captureTask.cancel();
-                captureTask = null;
+        
+        UUID playerUUID = event.getPlayer().getUniqueId();
+        
+        // Remove player from queue if they were in it
+        if (playerQueue.contains(playerUUID)) {
+            playerQueue.remove(playerUUID);
+            plugin.getLogger().info(event.getPlayer().getName() + " quit and was removed from KOTH queue");
+        }
+        
+        // If the quitting player was currently capturing
+        if (capturingPlayer != null && capturingPlayer.equals(playerUUID)) {
+            stopCurrentCapture();
+            
+            // Start capture for next player in queue
+            KothRegion region = kothRegions.get(activeKoth);
+            if (region != null) {
+                startNextPlayerCapture(region);
             }
-
-            updateBossBar();
-            plugin.getLogger().info(event.getPlayer().getName() + " quit while capturing KOTH, capture reset");
+            
+            plugin.getLogger().info(event.getPlayer().getName() + " quit while capturing KOTH, passing to next player in queue");
         }
     }
 
@@ -436,6 +499,10 @@ public class KothManager implements Listener {
 
     public Map<String, KothRegion> getKothRegions() {
         return new HashMap<>(kothRegions);
+    }
+
+    public LinkedList<UUID> getPlayerQueue() {
+        return new LinkedList<>(playerQueue);
     }
 
     // Reload method for when configuration changes
