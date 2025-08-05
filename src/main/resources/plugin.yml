@@ -1,7 +1,7 @@
 name: UltraKOTHPlusPlus
 main: top.sanscraft.ultrakoth.UltraKOTHPlusPlus
 version: 1.0.0
-author: SansNom
+author: TheOne_Player
 website: https://sanscraft.top
 description: Advanced KOTH plugin with WorldGuard, PlaceholderAPI, bossbar, rewards, and more.
 api-version: 1.19
