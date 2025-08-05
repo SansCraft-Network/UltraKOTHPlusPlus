@@ -280,7 +280,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Credits
 
-- **Author**: SansNom
+- **Author**: TheOne_Player
 - **Organization**: sanscraft.top
 - **Version**: 1.0.0
 
